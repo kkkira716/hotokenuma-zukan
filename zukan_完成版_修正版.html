@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <!-- 修正② タイトル設定 -->
+    <title>仏沼遠征 鳴き声図鑑</title>
+    <style>
+        /* 基本スタイル設定 */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: "Helvetica Neue", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            background-color: #f7f9fa;
+            color: #333;
+            line-height: 1.6;
+            padding-bottom: 60px;
+        }
+        header {
+            background-color: #ffffff;
+            border-bottom: 1px solid #e1e8ed;
+            padding: 20px 15px;
+            text-align: center;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+        }
+        header h1 {
+            font-size: 1.5rem;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        header p {
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+
+        /* メインコンテナ */
+        .container {
+            max-width: 1100px;
+            margin: 20px auto;
+            padding: 0 15px;
+        }
+
+        /* ページ（鳥2種を囲むブロック） */
+        .page {
+            display: none; /* 初期状態は非表示 */
+        }
+        .page.active {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        /* 鳥のカードスタイル */
+        .bird-card {
+            background-color: #ffffff;
+            border: 1px solid #e1e8ed;
+            border-radius: 8px;
+            overflow: hidden;
+            flex: 1;
+            min-width: 300px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.02);
+            display: flex;
+            flex-direction: column;
+        }
+        .image-container {
+            width: 100%;
+            padding-top: 100%; /* 1:1の正方形を維持 */
+            position: relative;
+            background-color: #eaeaea;
+        }
+        .image-container img {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        /* 再生ボタンエリア */
+        .audio-player {
+            padding: 15px;
+            background-color: #f8f9fa;
+            border-bottom: 1px solid #edf2f7;
+            text-align: center;
+        }
+        .play-btn {
+            display: inline-block;
+            width: 100%;
+            max-width: 240px;
+            padding: 12px 20px;
+            background-color: #1abc9c;
+            color: #fff;
+            border: none;
+            border-radius: 25px;
+            font-size: 1rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s, transform 0.1s;
+            box-shadow: 0 3px 6px rgba(26, 188, 156, 0.2);
+        }
+        .play-btn:hover {
+            background-color: #16a085;
+        }
+        .play-btn:active {
+            transform: scale(0.98);
+        }
+        .play-btn.playing {
+            background-color: #e74c3c;
+            box-shadow: 0 3px 6px rgba(231, 76, 60, 0.2);
+        }
+
+        /* 解説コンテンツエリア */
+        .bird-info {
+            padding: 20px;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .bird-names {
+            margin-bottom: 15px;
+            border-bottom: 2px solid #1abc9c;
+            padding-bottom: 8px;
+        }
+        .bird-name-ja {
+            font-size: 1.4rem;
+            font-weight: bold;
+            color: #2c3e50;
+        }
+        .bird-name-en {
+            font-size: 0.9rem;
+            color: #7f8c8d;
+            font-style: italic;
+        }
+
+        .info-title {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #34495e;
+            margin-top: 10px;
+            margin-bottom: 5px;
+            display: flex;
+            align-items: center;
+        }
+        .info-title::before {
+            content: "";
+            display: inline-block;
+            width: 4px;
+            height: 14px;
+            background-color: #1abc9c;
+            margin-right: 6px;
+            border-radius: 2px;
+        }
+
+        .identification-list {
+            list-style-type: none;
+            padding-left: 0;
+            margin-bottom: 15px;
+        }
+        .identification-list li {
+            font-size: 0.9rem;
+            position: relative;
+            padding-left: 15px;
+            margin-bottom: 6px;
+            color: #555;
+        }
+        .identification-list li::before {
+            content: "•";
+            color: #1abc9c;
+            font-weight: bold;
+            position: absolute;
+            left: 2px;
+        }
+
+        .one-point-box {
+            background-color: #edfaf6;
+            border-left: 3px solid #1abc9c;
+            padding: 10px 12px;
+            border-radius: 0 4px 4px 0;
+            font-size: 0.88rem;
+            color: #16a085;
+            margin-top: auto; /* 下部に固定 */
+        }
+
+        /* ページネーション（下部ナビゲーション） */
+        .pagination {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            max-width: 500px;
+            margin: 30px auto 10px;
+            padding: 0 15px;
+        }
+        .nav-btn {
+            padding: 10px 25px;
+            background-color: #34495e;
+            color: #fff;
+            border: none;
+            border-radius: 4px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            user-select: none;
+            transition: background-color 0.2s;
+        }
+        .nav-btn:hover {
+            background-color: #2c3e50;
+        }
+        .nav-btn:disabled {
+            background-color: #bdc3c7;
+            cursor: not-allowed;
+        }
+        .page-indicator {
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: #7f8c8d;
+        }
+
+        /* 修正③ フッター設定 */
+        footer {
+            text-align: center;
+            padding: 20px 15px;
+            background-color: #ffffff;
+            border-top: 1px solid #e1e8ed;
+            margin-top: 40px;
+            font-size: 0.85rem;
+            color: #7f8c8d;
+        }
+        footer a {
+            color: #1abc9c;
+            text-decoration: none;
+        }
+        footer a:hover {
+            text-decoration: underline;
+        }
+
+        /* レスポンシブ対応（スマホ縦画面） */
+        @media (max-width: 768px) {
+            .page.active {
+                flex-direction: column;
+            }
+            .bird-card {
+                width: 100%;
+            }
+            header {
+                padding: 15px 10px;
+            }
+            header h1 {
+                font-size: 1.3rem;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <!-- 修正② タイトル・サブタイトル変更 -->
+        <h1>仏沼遠征 鳴き声図鑑</h1>
+        <p>弘前大学野鳥の会</p>
+    </header>
+
+    <div class="container">
+        
+        <!-- ページ 1 -->
+        <div class="page active" id="page-1">
+            <!-- オオセッカ -->
+            <div class="bird-card">
+                <div class="image-container">
+                    <img src="1.オオセッカ.jpg" alt="オオセッカ">
+                </div>
+                <div class="audio-player">
+                    <button class="play-btn" onclick="toggleAudio('audio-oosekka', this)">▶ 鳴き声を再生</button>
+                    <audio id="audio-oosekka" src="2.オオセッカ.mp3" preload="none"></audio>
+                </div>
+                <div class="bird-info">
+                    <div class="bird-names">
+                        <div class="bird-name-ja">オオセッカ</div>
+                        <div class="bird-name-en">Marsh Grassbird</div>
+                    </div>
+                    <!-- 修正④ 説明文アップデート -->
+                    <div class="info-title">🔍識別ポイント</div>
+                    <ul class="identification-list">
+                        <li>小型で尾が短く、全体的に茶褐色。</li>
+                        <li>ヨシ原の上をひらひら飛びながらさえずる。</li>
+                        <li>細く高い「ジュリリリ…」という鳴き声が特徴。</li>
+                    </ul>
+                    <div class="info-title">💡ワンポイント</div>
+                    <div class="one-point-box">
+                        姿よりも鳴き声で見つけることが多い鳥です。
+                    </div>
+                </div>
+            </div>
+
+            <!-- オオヨシキリ -->
+            <div class="bird-card">
+                <div class="image-container">
+                    <img src="3.オオヨシキリ.jpg" alt="オオヨシキリ">
+                </div>
+                <div class="audio-player">
+                    <button class="play-btn" onclick="toggleAudio('audio-ooyoshikiri', this)">▶ 鳴き声を再生</button>
+                    <audio id="audio-ooyoshikiri" src="4.オオヨシキリ.mp3" preload="none"></audio>
+                </div>
+                <div class="bird-info">
+                    <div class="bird-names">
+                        <div class="bird-name-ja">オオヨシキリ</div>
+                        <div class="bird-name-en">Great Reed Warbler</div>
+                    </div>
+                    <!-- 修正④ 説明文アップデート -->
+                    <div class="info-title">🔍識別ポイント</div>
+                    <ul class="identification-list">
+                        <li>ヨシ原では比較的大型で、太いくちばしをもつ。</li>
+                        <li>ヨシの先端で口を大きく開けてさえずる。</li>
+                        <li>「ギョギョシ ギョギョシ」という大きな鳴き声。</li>
+                    </ul>
+                    <div class="info-title">💡ワンポイント</div>
+                    <div class="one-point-box">
+                        遠くからでも鳴き声で存在が分かります。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ページ 2 -->
+        <div class="page" id="page-2">
+            <!-- コヨシキリ -->
+            <div class="bird-card">
+                <div class="image-container">
+                    <img src="5.コヨシキリ.jpg" alt="コヨシキリ">
+                </div>
+                <div class="audio-player">
+                    <button class="play-btn" onclick="toggleAudio('audio-koyoshikiri', this)">▶ 鳴き声を再生</button>
+                    <audio id="audio-koyoshikiri" src="6.コヨシキリ.mp3" preload="none"></audio>
+                </div>
+                <div class="bird-info">
+                    <div class="bird-names">
+                        <div class="bird-name-ja">コヨシキリ</div>
+                        <div class="bird-name-en">Black-browed Reed Warbler</div>
+                    </div>
+                    <!-- 修正④ 説明文アップデート -->
+                    <div class="info-title">🔍識別ポイント</div>
+                    <ul class="identification-list">
+                        <li>オオヨシキリより小型で細身。</li>
+                        <li>白い眉斑（まゆ）がはっきりしている。</li>
+                        <li>軽快でテンポの速いさえずり。</li>
+                    </ul>
+                    <div class="info-title">💡ワンポイント</div>
+                    <div class="one-point-box">
+                        鳴き声はオオヨシキリより高く、リズミカルです。
+                    </div>
+                </div>
+            </div>
+
+            <!-- オオジュリン -->
+            <div class="bird-card">
+                <div class="image-container">
+                    <img src="7.オオジュリン.jpg" alt="オオジュリン">
+                </div>
+                <div class="audio-player">
+                    <button class="play-btn" onclick="toggleAudio('audio-oojurin', this)">▶ 鳴き声を再生</button>
+                    <audio id="audio-oojurin" src="8.オオジュリン.mp3" preload="none"></audio>
+                </div>
+                <div class="bird-info">
+                    <div class="bird-names">
+                        <div class="bird-name-ja">オオジュリン</div>
+                        <div class="bird-name-en">Common Reed Bunting</div>
+                    </div>
+                    <!-- 修正④ 説明文アップデート -->
+                    <div class="info-title">🔍識別ポイント</div>
+                    <ul class="identification-list">
+                        <li>オス夏羽は黒い頭と白い腹が特徴。</li>
+                        <li>ヨシの茎につかまって採食することが多い。</li>
+                        <li>太めの円すい形のくちばし。</li>
+                    </ul>
+                    <div class="info-title">💡ワンポイント</div>
+                    <div class="one-point-box">
+                        夏羽と冬羽で見た目が大きく変わります。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ページ 3 -->
+        <div class="page" id="page-3">
+            <!-- コジュリン -->
+            <div class="bird-card">
+                <div class="image-container">
+                    <img src="9.コジュリン.jpg" alt="コジュリン">
+                </div>
+                <div class="audio-player">
+                    <button class="play-btn" onclick="toggleAudio('audio-kojurin', this)">▶ 鳴き声を再生</button>
+                    <audio id="audio-kojurin" src="10.コジュリン.mp3" preload="none"></audio>
+                </div>
+                <div class="bird-info">
+                    <div class="bird-names">
+                        <div class="bird-name-ja">コジュリン</div>
+                        <div class="bird-name-en">Japanese Reed Bunting</div>
+                    </div>
+                    <!-- 修正④ 説明文アップデート -->
+                    <div class="info-title">🔍識別ポイント</div>
+                    <ul class="identification-list">
+                        <li>オオジュリンより小柄で細身。</li>
+                        <li>オス夏羽は黒い顔とのどが特徴.</li>
+                        <li>草原やヨシ原の低い場所で行動することが多い。</li>
+                    </ul>
+                    <div class="info-title">💡ワンポイント</div>
+                    <div class="one-point-box">
+                        草の中に隠れることが多く、鳴き声が見つけるヒントになります。
+                    </div>
+                </div>
+            </div>
+
+            <!-- 修正① ホオアカ追加（デザイン・機能完全統一） -->
+            <div class="bird-card">
+                <div class="image-container">
+                    <img src="11.ホオアカ.jpg" alt="ホオアカ">
+                </div>
+                <div class="audio-player">
+                    <button class="play-btn" onclick="toggleAudio('audio-hooaka', this)">▶ 鳴き声を再生</button>
+                    <audio id="audio-hooaka" src="12.ホオアカ.mp3" preload="none"></audio>
+                </div>
+                <div class="bird-info">
+                    <div class="bird-names">
+                        <div class="bird-name-ja">ホオアカ</div>
+                        <div class="bird-name-en">Chestnut-eared Bunting</div>
+                    </div>
+                    <div class="info-title">🔍識別ポイント</div>
+                    <ul class="identification-list">
+                        <li>頬の赤褐色の斑が名前の由来。</li>
+                        <li>胸に黒い縦斑がある。</li>
+                        <li>草や低木の先端によく止まる。</li>
+                    </ul>
+                    <div class="info-title">💡ワンポイント</div>
+                    <div class="one-point-box">
+                        さえずる姿は比較的見つけやすい鳥です。
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 修正① ページ 4（ヒバリ追加用） -->
+        <div class="page" id="page-4">
+            <!-- ヒバリ追加（デザイン・機能完全統一） -->
+            <div class="bird-card">
+                <div class="image-container">
+                    <img src="13.ヒバリ.jpg" alt="ヒバリ">
+                </div>
+                <div class="audio-player">
+                    <button class="play-btn" onclick="toggleAudio('audio-hibari', this)">▶ 鳴き声を再生</button>
+                    <audio id="audio-hibari" src="14.ヒバリ.mp3" preload="none"></audio>
+                </div>
+                <div class="bird-info">
+                    <div class="bird-names">
+                        <div class="bird-name-ja">ヒバリ</div>
+                        <div class="bird-name-en">Eurasian Skylark</div>
+                    </div>
+                    <div class="info-title">🔍識別ポイント</div>
+                    <ul class="identification-list">
+                        <li>頭に小さな冠羽がある。</li>
+                        <li>茶色い羽に黒い縦斑が入る。</li>
+                        <li>空高く飛びながら長時間さえずる。</li>
+                    </ul>
+                    <div class="info-title">💡ワンポイント</div>
+                    <div class="one-point-box">
+                        鳴き声は聞こえても、空高く飛ぶため姿を見つけにくいことがあります。
+                    </div>
+                </div>
+            </div>
+
+            <!-- レイアウトの左右バランス（2列表示）を維持するための不可視カード -->
+            <div class="bird-card" style="visibility: hidden; min-width: 300px; flex: 1;"></div>
+        </div>
+
+        <!-- ページ送りナビゲーション -->
+        <div class="pagination">
+            <button class="nav-btn" id="prev-btn" onclick="changePage(-1)" disabled>前へ</button>
+            <span class="page-indicator" id="page-idx">1 / 4</span>
+            <button class="nav-btn" id="next-btn" onclick="changePage(1)">次へ</button>
+        </div>
+
+    </div>
+
+    <!-- 修正③ フッターに引用元追加 -->
+    <footer>
+        <p>引用元：音声ファイル <a href="https://xeno-canto.org/" target="_blank">xeno-canto</a> / 写真 <a href="https://db3.bird-research.jp/saezuri/" target="_blank">Bird Research さえずりナビ</a></p>
+    </footer>
+
+    <script>
+        let currentPage = 1;
+        // 修正① 鳥追加に伴い全4ページ構成に変更
+        const totalPages = 4;
+        let currentPlayingAudio = null;
+        let currentPlayingButton = null;
+
+        function changePage(direction) {
+            stopAllAudio();
+            currentPage += direction;
+            if (currentPage < 1) currentPage = 1;
+            if (currentPage > totalPages) currentPage = totalPages;
+
+            for (let i = 1; i <= totalPages; i++) {
+                const pageEl = document.getElementById(`page-${i}`);
+                if (i === currentPage) {
+                    pageEl.classList.add('active');
+                } else {
+                    pageEl.classList.remove('active');
+                }
+            }
+
+            document.getElementById('prev-btn').disabled = (currentPage === 1);
+            document.getElementById('next-btn').disabled = (currentPage === totalPages);
+            document.getElementById('page-idx').textContent = `${currentPage} / ${totalPages}`;
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function toggleAudio(audioId, btn) {
+            const audio = document.getElementById(audioId);
+            if (currentPlayingAudio === audio) {
+                stopAllAudio();
+                return;
+            }
+            if (currentPlayingAudio) {
+                stopAllAudio();
+            }
+            audio.play().then(() => {
+                currentPlayingAudio = audio;
+                currentPlayingButton = btn;
+                btn.textContent = "■ 停止する";
+                btn.classList.add('playing');
+            }).catch(error => {
+                console.error("音声の再生に失敗しました:", error);
+                alert("音声ファイルが見つからないか、ブラウザのセキュリティにより再生がブロックされました。ファイル名と配置を確認してください。");
+            });
+
+            audio.onended = function() {
+                stopAllAudio();
+            };
+        }
+
+        function stopAllAudio() {
+            if (currentPlayingAudio) {
+                currentPlayingAudio.pause();
+                currentPlayingAudio.currentTime = 0;
+            }
+            if (currentPlayingButton) {
+                currentPlayingButton.textContent = "▶ 鳴き声を再生";
+                currentPlayingButton.classList.remove('playing');
+            }
+            currentPlayingAudio = null;
+            currentPlayingButton = null;
+        }
+    </script>
+</body>
+</html>
